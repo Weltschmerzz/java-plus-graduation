@@ -2,6 +2,17 @@ server:
   port: 0
 
 spring:
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false
+    service-registry:
+      auto-registration:
+        enabled: false
+
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:stats;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -23,3 +34,9 @@ logging:
   level:
     org.springframework.orm.jpa: INFO
     org.springframework.transaction: INFO
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false

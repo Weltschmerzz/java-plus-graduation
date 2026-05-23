@@ -1,11 +1,12 @@
 package ru.practicum.stats.client;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.client.RestTemplate;
 import ru.practicum.stats.dto.EndpointHitDto;
 
 import java.time.LocalDateTime;
@@ -17,16 +18,24 @@ import java.util.Map;
 @Service
 public class StatsClient extends BaseClient {
 
-    private static final String API_PREFIX = "";
+    private static final String STATS_SERVER_SERVICE_ID = "stats-server";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Autowired
-    public StatsClient(@Value("${stats-server.url}") String serverUrl, RestTemplateBuilder builder) {
-        super(
-                builder
-                        .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl + API_PREFIX))
-                        .build()
-        );
+    public StatsClient(DiscoveryClient discoveryClient, RestTemplateBuilder builder) {
+        this(discoveryClient, builder.build());
+    }
+
+    StatsClient(DiscoveryClient discoveryClient, RestTemplate restTemplate) {
+        super(restTemplate, () -> resolveStatsServerUri(discoveryClient));
+    }
+
+    private static String resolveStatsServerUri(DiscoveryClient discoveryClient) {
+        List<ServiceInstance> instances = discoveryClient.getInstances(STATS_SERVER_SERVICE_ID);
+        if (instances == null || instances.isEmpty()) {
+            throw new IllegalStateException("stats-server is not registered in Eureka");
+        }
+        return instances.getFirst().getUri().toString();
     }
 
     public ResponseEntity<Object> saveHit(EndpointHitDto hitDto) {
@@ -55,22 +64,5 @@ public class StatsClient extends BaseClient {
         }
 
         return get(path, parameters);
-    }
-
-    private Map<String, Object> createParameters(LocalDateTime start, LocalDateTime end,
-                                                 List<String> uris, Boolean unique) {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("start", start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        parameters.put("end", end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-
-        if (uris != null && !uris.isEmpty()) {
-            parameters.put("uris", uris.toArray());
-        }
-
-        if (unique != null) {
-            parameters.put("unique", unique);
-        }
-
-        return parameters;
     }
 }

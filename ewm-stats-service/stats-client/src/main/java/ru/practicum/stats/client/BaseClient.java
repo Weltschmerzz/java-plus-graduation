@@ -2,6 +2,7 @@ package ru.practicum.stats.client;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,9 +16,15 @@ import org.springframework.web.client.RestTemplate;
 public class BaseClient {
 
     protected final RestTemplate rest;
+    private final Supplier<String> baseUriSupplier;
 
     public BaseClient(RestTemplate rest) {
+        this(rest, () -> "");
+    }
+
+    public BaseClient(RestTemplate rest, Supplier<String> baseUriSupplier) {
         this.rest = rest;
+        this.baseUriSupplier = baseUriSupplier;
     }
 
     protected ResponseEntity<Object> get(String path) {
@@ -41,16 +48,27 @@ public class BaseClient {
                                                           @Nullable Map<String, Object> parameters,
                                                           @Nullable T body) {
         HttpEntity<T> requestEntity = new HttpEntity<>(body, defaultHeaders());
+        String requestPath = resolveRequestPath(path);
 
         try {
             if (parameters != null && !parameters.isEmpty()) {
-                return rest.exchange(path, method, requestEntity, Object.class, parameters);
+                return rest.exchange(requestPath, method, requestEntity, Object.class, parameters);
             }
-            return rest.exchange(path, method, requestEntity, Object.class);
+            return rest.exchange(requestPath, method, requestEntity, Object.class);
         } catch (HttpStatusCodeException e) {
             // Возвращаем код и тело ошибки как есть — удобно для дебага и корректно для прокси-клиента
             return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
         }
+    }
+
+    private String resolveRequestPath(String path) {
+        String baseUri = baseUriSupplier.get();
+        if (baseUri == null || baseUri.isBlank()) {
+            return path;
+        }
+        String normalizedBaseUri = baseUri.endsWith("/") ? baseUri.substring(0, baseUri.length() - 1) : baseUri;
+        String normalizedPath = path.startsWith("/") ? path : "/" + path;
+        return normalizedBaseUri + normalizedPath;
     }
 
     private HttpHeaders defaultHeaders() {

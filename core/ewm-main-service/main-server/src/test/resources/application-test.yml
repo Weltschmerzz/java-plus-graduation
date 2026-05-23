@@ -1,4 +1,15 @@
 spring:
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false
+    service-registry:
+      auto-registration:
+        enabled: false
+
   datasource:
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -13,3 +24,12 @@ spring:
   test:
     database:
       replace: none
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+stats-server:
+  url: http://localhost:9090

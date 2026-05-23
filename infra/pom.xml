@@ -14,4 +14,10 @@
     <artifactId>infra</artifactId>
     <packaging>pom</packaging>
     <name>EWM Infra</name>
+
+    <modules>
+        <module>discovery-server</module>
+        <module>config-server</module>
+        <module>gateway-server</module>
+    </modules>
 </project>

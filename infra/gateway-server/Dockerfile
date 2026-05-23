@@ -1,6 +1,8 @@
 FROM eclipse-temurin:21-jre
+
 WORKDIR /app
 
-COPY core/ewm-main-service/main-server/target/main-server-*.jar app.jar
+COPY infra/gateway-server/target/gateway-server-*.jar app.jar
 
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

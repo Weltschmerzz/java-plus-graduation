@@ -2,6 +2,6 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-COPY ewm-main-service/target/ewm-main-service-*.jar app.jar
+COPY core/ewm-main-service/main-server/target/main-server-*.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
