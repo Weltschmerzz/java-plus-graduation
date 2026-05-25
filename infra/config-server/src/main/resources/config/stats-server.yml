@@ -1,12 +1,9 @@
-server:
-  port: 8080
-
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ewm}
-    username: ${DB_USER:ewm}
-    password: ${DB_PASSWORD:ewm}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:stats}
+    username: ${DB_USER:stats}
+    password: ${DB_PASSWORD:stats}
 
   jpa:
     hibernate:
@@ -19,9 +16,6 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
-
-stats-server:
-  url: ${STATS_SERVER_URL:http://localhost:9090}
 
 logging:
   level:
