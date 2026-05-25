@@ -11,13 +11,13 @@ import java.util.Optional;
 public interface CompilationRepository extends JpaRepository<Compilation, Long> {
 
     @Override
-    @EntityGraph(attributePaths = {"events", "events.category", "events.initiator"})
+    @EntityGraph(attributePaths = {"events"})
     Optional<Compilation> findById(Long id);
 
     @Override
-    @EntityGraph(attributePaths = {"events", "events.category", "events.initiator"})
+    @EntityGraph(attributePaths = {"events"})
     Page<Compilation> findAll(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"events", "events.category", "events.initiator"})
+    @EntityGraph(attributePaths = {"events"})
     Page<Compilation> findAllByPinned(boolean pinned, Pageable pageable);
 }

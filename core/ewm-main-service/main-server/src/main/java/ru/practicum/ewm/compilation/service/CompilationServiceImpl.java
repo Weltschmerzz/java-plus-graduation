@@ -21,8 +21,8 @@ import ru.practicum.ewm.events.repository.ParticipationRequestRepository;
 import ru.practicum.ewm.events.service.StatsFacade;
 import ru.practicum.ewm.events.util.OffsetBasedPageRequest;
 import ru.practicum.ewm.exception.NotFoundException;
-import ru.practicum.ewm.category.model.Category;
-import ru.practicum.ewm.users.model.User;
+import ru.practicum.ewm.category.api.CategoryLookupService;
+import ru.practicum.ewm.users.api.UserLookupService;
 
 import java.util.*;
 
@@ -34,6 +34,8 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
     private final ParticipationRequestRepository requestRepository;
     private final StatsFacade statsFacade;
+    private final UserLookupService userLookupService;
+    private final CategoryLookupService categoryLookupService;
 
     @Override
     public CompilationDto create(NewCompilationDto dto) {
@@ -126,11 +128,13 @@ public class CompilationServiceImpl implements CompilationService {
 
         Map<Long, Long> confirmed = getConfirmedMap(events);
         Map<Long, Long> views = getViewsMap(events);
+        Map<Long, UserShortDto> initiators = getInitiatorsMap(events);
+        Map<Long, CategoryDto> categories = getCategoriesMap(events);
 
         return events.stream().map(e -> {
             EventShortDto dto = EventMapper.toShortDto(e);
-            dto.setCategory(mapCategory(e.getCategory()));
-            dto.setInitiator(mapInitiator(e.getInitiator()));
+            dto.setCategory(mapCategory(e.getCategoryId(), categories));
+            dto.setInitiator(mapInitiator(e.getInitiatorId(), initiators));
             dto.setConfirmedRequests(confirmed.getOrDefault(e.getId(), 0L));
             dto.setViews(views.getOrDefault(e.getId(), 0L));
             return dto;
@@ -164,17 +168,41 @@ public class CompilationServiceImpl implements CompilationService {
         return result;
     }
 
-    private CategoryDto mapCategory(Category c) {
-        CategoryDto dto = new CategoryDto();
-        dto.setId(c.getId());
-        dto.setName(c.getName());
+    private Map<Long, CategoryDto> getCategoriesMap(List<Event> events) {
+        Set<Long> categoryIds = new HashSet<>();
+        for (Event event : events) {
+            if (event.getCategoryId() != null) {
+                categoryIds.add(event.getCategoryId());
+            }
+        }
+
+        return categoryLookupService.getByIds(categoryIds);
+    }
+
+    private CategoryDto mapCategory(Long categoryId, Map<Long, CategoryDto> categories) {
+        CategoryDto dto = categories.get(categoryId);
+        if (dto == null) {
+            throw new NotFoundException("Категория с id=" + categoryId + " не найдена!");
+        }
         return dto;
     }
 
-    private UserShortDto mapInitiator(User u) {
-        UserShortDto dto = new UserShortDto();
-        dto.setId(u.getId());
-        dto.setName(u.getName());
+    private Map<Long, UserShortDto> getInitiatorsMap(List<Event> events) {
+        Set<Long> initiatorIds = new HashSet<>();
+        for (Event event : events) {
+            if (event.getInitiatorId() != null) {
+                initiatorIds.add(event.getInitiatorId());
+            }
+        }
+
+        return userLookupService.getShortByIds(initiatorIds);
+    }
+
+    private UserShortDto mapInitiator(Long initiatorId, Map<Long, UserShortDto> initiators) {
+        UserShortDto dto = initiators.get(initiatorId);
+        if (dto == null) {
+            throw new NotFoundException("User with id=" + initiatorId + " not found!");
+        }
         return dto;
     }
 }

@@ -16,6 +16,11 @@
     <name>EWM Core</name>
 
     <modules>
+        <module>ewm-common</module>
+        <module>user-service</module>
+        <module>event-service</module>
+        <module>request-service</module>
+        <module>additional-service</module>
         <module>ewm-main-service</module>
     </modules>
 </project>
