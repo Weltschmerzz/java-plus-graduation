@@ -1,7 +1,6 @@
 package ru.practicum.ewm.category.client;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.category.api.CategoryLookupService;
@@ -14,10 +13,6 @@ import java.util.Map;
 @Service
 @Primary
 @RequiredArgsConstructor
-@ConditionalOnProperty(
-        name = "ewm.categories.lookup.mode",
-        havingValue = "feign"
-)
 public class FeignCategoryLookupService implements CategoryLookupService {
 
     private final CategoryServiceClient categoryServiceClient;

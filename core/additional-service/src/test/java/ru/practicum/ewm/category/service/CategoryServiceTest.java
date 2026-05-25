@@ -1,5 +1,6 @@
 package ru.practicum.ewm.category.service;
 
+import additional.service.AdditionalServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,7 +11,7 @@ import ru.practicum.ewm.exception.NotFoundException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(classes = AdditionalServiceApplication.class)
 @ActiveProfiles("test")
 class CategoryServiceTest {
 

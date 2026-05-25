@@ -1,14 +1,17 @@
 package ru.practicum.ewm.category.repository;
 
+import additional.service.AdditionalServiceApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import ru.practicum.ewm.category.model.Category;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@ContextConfiguration(classes = AdditionalServiceApplication.class)
 @ActiveProfiles("test")
 class CategoryRepositoryTest {
 

@@ -1,10 +1,13 @@
 package ru.practicum.ewm.category.controller;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.service.CategoryService;
@@ -16,8 +19,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PublicCategoryController.class)
+@ContextConfiguration(classes = PublicCategoryControllerTest.TestApplication.class)
+@Import(PublicCategoryController.class)
 @ActiveProfiles("test")
 class PublicCategoryControllerTest {
+
+    @SpringBootConfiguration
+    static class TestApplication {
+    }
 
     @Autowired
     private MockMvc mockMvc;

@@ -94,6 +94,47 @@ services:
       - "--spring.cloud.config.discovery.service-id=config-server"
     restart: on-failure
 
+  additional-service:
+    build:
+      context: .
+      dockerfile: core/additional-service/Dockerfile
+    depends_on:
+      discovery-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+      main-db:
+        condition: service_healthy
+    environment:
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED: "true"
+      SPRING_CLOUD_CONFIG_DISCOVERY_SERVICE_ID: config-server
+      DB_HOST: main-db
+      DB_PORT: 5432
+      DB_NAME: ewm
+      DB_USER: ewm
+      DB_PASSWORD: ewm
+      SPRING_DATASOURCE_URL: jdbc:postgresql://main-db:5432/ewm
+      SPRING_DATASOURCE_USERNAME: ewm
+      SPRING_DATASOURCE_PASSWORD: ewm
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_SQL_INIT_MODE: never
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "until curl -fsS http://discovery-server:8761/eureka/apps/CONFIG-SERVER >/dev/null; do sleep 2; done; exec java -jar app.jar \"$@\""
+      - "java"
+    command:
+      - "--eureka.client.service-url.defaultZone=http://discovery-server:8761/eureka/"
+      - "--eureka.instance.prefer-ip-address=true"
+      - "--spring.config.import=optional:configserver:"
+      - "--spring.cloud.config.discovery.enabled=true"
+      - "--spring.cloud.config.discovery.service-id=config-server"
+    restart: on-failure
+
   stats-server:
     build:
       context: .
@@ -149,6 +190,8 @@ services:
         condition: service_started
       user-service:
         condition: service_started
+      additional-service:
+        condition: service_started
       main-db:
         condition: service_healthy
     environment:
@@ -170,6 +213,7 @@ services:
       SPRING_SQL_INIT_MODE: always
       SPRING_SQL_INIT_SCHEMA_LOCATIONS: classpath:schema.sql
       EWM_USERS_LOOKUP_MODE: feign
+      EWM_CATEGORIES_LOOKUP_MODE: feign
     entrypoint:
       - "/bin/sh"
       - "-c"
@@ -193,6 +237,8 @@ services:
       config-server:
         condition: service_started
       user-service:
+        condition: service_started
+      additional-service:
         condition: service_started
       main-server:
         condition: service_started

@@ -14,6 +14,14 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/admin/users,/admin/users/**
+        - id: additional-admin-categories
+          uri: lb://additional-service
+          predicates:
+            - Path=/admin/categories,/admin/categories/**
+        - id: additional-admin-locations
+          uri: lb://additional-service
+          predicates:
+            - Path=/admin/locations,/admin/locations/**
         - id: main-admin
           uri: lb://main-server
           predicates:
@@ -26,18 +34,18 @@ spring:
           uri: lb://main-server
           predicates:
             - Path=/events/**
-        - id: main-categories
-          uri: lb://main-server
+        - id: additional-categories
+          uri: lb://additional-service
           predicates:
-            - Path=/categories/**
+            - Path=/categories,/categories/**
         - id: main-compilations
           uri: lb://main-server
           predicates:
             - Path=/compilations/**
-        - id: main-locations
-          uri: lb://main-server
+        - id: additional-locations
+          uri: lb://additional-service
           predicates:
-            - Path=/locations/**
+            - Path=/locations,/locations/**
 
 server:
   port: 8080
