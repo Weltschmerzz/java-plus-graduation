@@ -73,11 +73,13 @@ public class EventServiceImpl implements EventService {
                 .and(EventSpecifications.categoryIn(categories))
                 .and(EventSpecifications.paid(paid))
                 .and(EventSpecifications.eventDateAfter(start))
-                .and(EventSpecifications.eventDateBefore(end))
-                .and(EventSpecifications.onlyAvailable(onlyAvailable));
+                .and(EventSpecifications.eventDateBefore(end));
 
         if (sort == PublicEventSort.VIEWS) {
             List<Event> all = eventRepository.findAll(spec);
+            if (Boolean.TRUE.equals(onlyAvailable)) {
+                all = filterAvailable(all);
+            }
             List<EventShortDto> mapped = toShortDtosWithMeta(all);
             mapped.sort(
                     Comparator.comparingLong((EventShortDto d) -> d.getViews() == null ? 0L : d.getViews())
@@ -89,6 +91,11 @@ public class EventServiceImpl implements EventService {
 
         // EVENT_DATE (или null): сортируем по eventDate в БД
         Sort dbSort = Sort.by(Sort.Direction.ASC, "eventDate");
+        if (Boolean.TRUE.equals(onlyAvailable)) {
+            List<Event> available = findAvailableEvents(spec, dbSort, from, size);
+            return toShortDtosWithMeta(available);
+        }
+
         OffsetBasedPageRequest pageable = new OffsetBasedPageRequest(from, size, dbSort);
 
         List<Event> page = eventRepository.findAll(spec, pageable).getContent();
@@ -363,6 +370,57 @@ public class EventServiceImpl implements EventService {
     private Map<Long, Long> getConfirmedMap(List<Event> events) {
         List<Long> ids = events.stream().map(Event::getId).toList();
         return requestLookupService.countConfirmedByEventIds(ids);
+    }
+
+    private List<Event> findAvailableEvents(Specification<Event> spec, Sort sort, int from, int size) {
+        int batchSize = Math.max(size * 2, 50);
+        int rawOffset = 0;
+        int skipped = 0;
+        List<Event> result = new ArrayList<>();
+
+        while (result.size() < size) {
+            OffsetBasedPageRequest pageable = new OffsetBasedPageRequest(rawOffset, batchSize, sort);
+            List<Event> batch = eventRepository.findAll(spec, pageable).getContent();
+            if (batch.isEmpty()) {
+                break;
+            }
+
+            List<Event> available = filterAvailable(batch);
+            for (Event event : available) {
+                if (skipped < from) {
+                    skipped++;
+                    continue;
+                }
+                result.add(event);
+                if (result.size() == size) {
+                    break;
+                }
+            }
+
+            if (batch.size() < batchSize) {
+                break;
+            }
+            rawOffset += batchSize;
+        }
+
+        return result;
+    }
+
+    private List<Event> filterAvailable(List<Event> events) {
+        if (events.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Long> confirmed = getConfirmedMap(events);
+        return events.stream()
+                .filter(event -> {
+                    Integer limit = event.getParticipantLimit();
+                    if (limit == null || limit == 0) {
+                        return true;
+                    }
+                    return confirmed.getOrDefault(event.getId(), 0L) < limit;
+                })
+                .toList();
     }
 
     private Map<Long, Long> getViewsMap(List<Event> events) {
