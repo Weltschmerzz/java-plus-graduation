@@ -22,26 +22,46 @@ spring:
           uri: lb://additional-service
           predicates:
             - Path=/admin/locations,/admin/locations/**
+        - id: event-admin-compilations
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/compilations,/admin/compilations/**
+        - id: event-admin
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/events,/admin/events/**
         - id: main-admin
           uri: lb://main-server
           predicates:
             - Path=/admin/**
+        - id: request-user-requests
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/requests,/users/*/requests/**
+        - id: request-event-owner-requests
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/events/*/requests,/users/*/events/*/requests/**
+        - id: event-private-user-events
+          uri: lb://event-service
+          predicates:
+            - Path=/users/*/events,/users/*/events/**
         - id: main-users
           uri: lb://main-server
           predicates:
             - Path=/users/**
-        - id: main-events
-          uri: lb://main-server
+        - id: event-public
+          uri: lb://event-service
           predicates:
-            - Path=/events/**
+            - Path=/events,/events/**
         - id: additional-categories
           uri: lb://additional-service
           predicates:
             - Path=/categories,/categories/**
-        - id: main-compilations
-          uri: lb://main-server
+        - id: event-compilations
+          uri: lb://event-service
           predicates:
-            - Path=/compilations/**
+            - Path=/compilations,/compilations/**
         - id: additional-locations
           uri: lb://additional-service
           predicates:

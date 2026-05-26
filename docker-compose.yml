@@ -337,6 +337,10 @@ services:
         condition: service_started
       additional-service:
         condition: service_started
+      event-service:
+        condition: service_started
+      request-service:
+        condition: service_started
       main-server:
         condition: service_started
     ports:
@@ -351,7 +355,7 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "until curl -fsS http://discovery-server:8761/eureka/apps/CONFIG-SERVER >/dev/null; do sleep 2; done; until curl -fsS http://discovery-server:8761/eureka/apps/MAIN-SERVER >/dev/null; do sleep 2; done; exec java -jar app.jar \"$@\""
+      - "until curl -fsS http://discovery-server:8761/eureka/apps/CONFIG-SERVER >/dev/null; do sleep 2; done; until curl -fsS http://discovery-server:8761/eureka/apps/MAIN-SERVER >/dev/null; do sleep 2; done; until curl -fsS http://discovery-server:8761/eureka/apps/EVENT-SERVICE >/dev/null; do sleep 2; done; until curl -fsS http://discovery-server:8761/eureka/apps/REQUEST-SERVICE >/dev/null; do sleep 2; done; exec java -jar app.jar \"$@\""
       - "java"
     command:
       - "--eureka.client.service-url.defaultZone=http://discovery-server:8761/eureka/"

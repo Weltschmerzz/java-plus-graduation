@@ -8,11 +8,18 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = {
         "ru.practicum.ewm.events",
+        "ru.practicum.ewm.compilation",
         "ru.practicum.ewm.exception",
         "ru.practicum.stats.client"
 })
-@EntityScan(basePackages = "ru.practicum.ewm.events.model")
-@EnableJpaRepositories(basePackages = "ru.practicum.ewm.events.repository")
+@EntityScan(basePackages = {
+        "ru.practicum.ewm.events.model",
+        "ru.practicum.ewm.compilation.model"
+})
+@EnableJpaRepositories(basePackages = {
+        "ru.practicum.ewm.events.repository",
+        "ru.practicum.ewm.compilation.repository"
+})
 @EnableFeignClients(basePackages = "ru.practicum.ewm.events.client")
 public class EventServiceApplication {
 
