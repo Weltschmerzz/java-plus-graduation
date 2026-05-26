@@ -8,11 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.events.dto.*;
 import ru.practicum.ewm.events.mapper.EventMapper;
-import ru.practicum.ewm.events.mapper.RequestMapper;
 import ru.practicum.ewm.events.model.*;
 import ru.practicum.ewm.events.repository.EventRepository;
 import ru.practicum.ewm.events.repository.EventSpecifications;
-import ru.practicum.ewm.events.repository.ParticipationRequestRepository;
 import ru.practicum.ewm.exception.BadRequestException;
 import ru.practicum.ewm.events.util.DateTimeUtil;
 import ru.practicum.ewm.events.util.OffsetBasedPageRequest;
@@ -21,6 +19,7 @@ import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.NotFoundException;
 
 import ru.practicum.ewm.category.api.CategoryLookupService;
+import ru.practicum.ewm.requests.api.RequestLookupService;
 import ru.practicum.ewm.users.api.UserLookupService;
 
 import java.time.LocalDateTime;
@@ -32,10 +31,10 @@ import java.util.*;
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
-    private final ParticipationRequestRepository requestRepository;
 
     private final UserLookupService userLookupService;
     private final CategoryLookupService categoryLookupService;
+    private final RequestLookupService requestLookupService;
 
     private final StatsFacade statsFacade;
 
@@ -198,101 +197,6 @@ public class EventServiceImpl implements EventService {
         applyUserUpdate(e, dto);
 
         return toFullDtoWithMeta(eventRepository.save(e));
-    }
-
-    @Override
-    public List<ParticipationRequestDto> getEventParticipants(long userId, long eventId) {
-        ensureUserExists(userId);
-
-        Event e = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Событие с id=" + userId + " не найдено!"));
-
-        if (!Objects.equals(e.getInitiatorId(), userId)) {
-            throw new NotFoundException("Событие с id=" + userId + " не найдено!");
-        }
-
-        return requestRepository.findAllByEvent_IdOrderByIdAsc(eventId)
-                .stream()
-                .map(RequestMapper::toDto)
-                .toList();
-    }
-
-    @Override
-    @Transactional
-    public EventRequestStatusUpdateResult changeRequestStatus(long userId, long eventId, EventRequestStatusUpdateRequest dto) {
-        ensureUserExists(userId);
-
-        Event e = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Событие с id=" + userId + " не найдено!"));
-
-        if (!Objects.equals(e.getInitiatorId(), userId)) {
-            throw new NotFoundException("Событие с id=" + userId + " не найдено!");
-        }
-
-        List<ParticipationRequest> requests = requestRepository.findAllByIdIn(dto.getRequestIds());
-        if (requests.size() != dto.getRequestIds().size()) {
-            throw new NotFoundException("Не все запросы были найдены.");
-        }
-
-        for (ParticipationRequest r : requests) {
-            if (!Objects.equals(r.getEvent().getId(), eventId)) {
-                throw new ConflictException("Запрос не принадлежит указанному событию!");
-            }
-            if (r.getStatus() != RequestStatus.PENDING) {
-                throw new ConflictException("Изменение статуса допускается исключительно для запросов в статусе PENDING!");
-            }
-        }
-
-        EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-
-        // если лимит 0 или модерация выключена — подтверждение не требуется
-        if (e.getParticipantLimit() == 0 || !Boolean.TRUE.equals(e.getRequestModeration())) {
-            for (ParticipationRequest r : requests) {
-                if (dto.getStatus() == RequestUpdateStatus.CONFIRMED) {
-                    r.setStatus(RequestStatus.CONFIRMED);
-                    result.getConfirmedRequests().add(RequestMapper.toDto(r));
-                } else {
-                    r.setStatus(RequestStatus.REJECTED);
-                    result.getRejectedRequests().add(RequestMapper.toDto(r));
-                }
-            }
-            requestRepository.saveAll(requests);
-            return result;
-        }
-
-        long confirmed = requestRepository.countByEvent_IdAndStatus(eventId, RequestStatus.CONFIRMED);
-        int limit = e.getParticipantLimit();
-
-        if (dto.getStatus() == RequestUpdateStatus.CONFIRMED) {
-            for (ParticipationRequest r : requests) {
-                if (confirmed >= limit) {
-                    throw new ConflictException("Превышено допустимое количество участников!");
-                }
-                r.setStatus(RequestStatus.CONFIRMED);
-                confirmed++;
-                result.getConfirmedRequests().add(RequestMapper.toDto(r));
-            }
-            requestRepository.saveAll(requests);
-
-            // если лимит исчерпан — отклонить все оставшиеся pending
-            if (confirmed >= limit) {
-                List<ParticipationRequest> pending = requestRepository.findAllByEvent_IdAndStatus(eventId, RequestStatus.PENDING);
-                for (ParticipationRequest p : pending) {
-                    p.setStatus(RequestStatus.REJECTED);
-                }
-                requestRepository.saveAll(pending);
-            }
-
-            return result;
-        }
-
-        // REJECTED
-        for (ParticipationRequest r : requests) {
-            r.setStatus(RequestStatus.REJECTED);
-            result.getRejectedRequests().add(RequestMapper.toDto(r));
-        }
-        requestRepository.saveAll(requests);
-        return result;
     }
 
     //ADMIN
@@ -458,15 +362,7 @@ public class EventServiceImpl implements EventService {
 
     private Map<Long, Long> getConfirmedMap(List<Event> events) {
         List<Long> ids = events.stream().map(Event::getId).toList();
-        List<Object[]> rows = requestRepository.countByEventIdsAndStatus(ids, RequestStatus.CONFIRMED);
-
-        Map<Long, Long> result = new HashMap<>();
-        for (Object[] r : rows) {
-            Long eventId = (Long) r[0];
-            Long cnt = (Long) r[1];
-            result.put(eventId, cnt);
-        }
-        return result;
+        return requestLookupService.countConfirmedByEventIds(ids);
     }
 
     private Map<Long, Long> getViewsMap(List<Event> events) {

@@ -2,6 +2,8 @@ package ru.practicum.ewm.events.repository;
 
 import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.ewm.events.model.*;
+import ru.practicum.ewm.requests.model.ParticipationRequest;
+import ru.practicum.ewm.requests.model.RequestStatus;
 
 import jakarta.persistence.criteria.*;
 import java.time.LocalDateTime;
@@ -66,7 +68,7 @@ public final class EventSpecifications {
             Root<ParticipationRequest> reqRoot = sub.from(ParticipationRequest.class);
             sub.select(cb.count(reqRoot.get("id")));
             sub.where(
-                    cb.equal(reqRoot.get("event").get("id"), root.get("id")),
+                    cb.equal(reqRoot.get("eventId"), root.get("id")),
                     cb.equal(reqRoot.get("status"), RequestStatus.CONFIRMED)
             );
 

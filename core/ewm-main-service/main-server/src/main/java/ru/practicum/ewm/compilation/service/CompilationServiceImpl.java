@@ -15,13 +15,12 @@ import ru.practicum.ewm.events.dto.EventShortDto;
 import ru.practicum.ewm.events.dto.UserShortDto;
 import ru.practicum.ewm.events.mapper.EventMapper;
 import ru.practicum.ewm.events.model.Event;
-import ru.practicum.ewm.events.model.RequestStatus;
 import ru.practicum.ewm.events.repository.EventRepository;
-import ru.practicum.ewm.events.repository.ParticipationRequestRepository;
 import ru.practicum.ewm.events.service.StatsFacade;
 import ru.practicum.ewm.events.util.OffsetBasedPageRequest;
 import ru.practicum.ewm.exception.NotFoundException;
 import ru.practicum.ewm.category.api.CategoryLookupService;
+import ru.practicum.ewm.requests.api.RequestLookupService;
 import ru.practicum.ewm.users.api.UserLookupService;
 
 import java.util.*;
@@ -32,7 +31,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
-    private final ParticipationRequestRepository requestRepository;
+    private final RequestLookupService requestLookupService;
     private final StatsFacade statsFacade;
     private final UserLookupService userLookupService;
     private final CategoryLookupService categoryLookupService;
@@ -143,15 +142,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     private Map<Long, Long> getConfirmedMap(List<Event> events) {
         List<Long> ids = events.stream().map(Event::getId).toList();
-        List<Object[]> rows = requestRepository.countByEventIdsAndStatus(ids, RequestStatus.CONFIRMED);
-
-        Map<Long, Long> result = new HashMap<>();
-        for (Object[] r : rows) {
-            Long eventId = (Long) r[0];
-            Long cnt = (Long) r[1];
-            result.put(eventId, cnt);
-        }
-        return result;
+        return requestLookupService.countConfirmedByEventIds(ids);
     }
 
     private Map<Long, Long> getViewsMap(List<Event> events) {

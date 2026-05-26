@@ -1,4 +1,4 @@
-package ru.practicum.ewm.events.model;
+package ru.practicum.ewm.requests.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -22,9 +22,8 @@ public class ParticipationRequest {
     @Column(nullable = false)
     private LocalDateTime created;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_id")
-    private Event event;
+    @Column(name = "event_id", nullable = false)
+    private Long eventId;
 
     @Column(name = "requester_id", nullable = false)
     private Long requesterId;
