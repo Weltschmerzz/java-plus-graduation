@@ -10,30 +10,62 @@ spring:
         service-id: config-server
     gateway:
       routes:
+        - id: user-admin
+          uri: lb://user-service
+          predicates:
+            - Path=/admin/users,/admin/users/**
+        - id: additional-admin-categories
+          uri: lb://additional-service
+          predicates:
+            - Path=/admin/categories,/admin/categories/**
+        - id: additional-admin-locations
+          uri: lb://additional-service
+          predicates:
+            - Path=/admin/locations,/admin/locations/**
+        - id: event-admin-compilations
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/compilations,/admin/compilations/**
+        - id: event-admin
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/events,/admin/events/**
         - id: main-admin
           uri: lb://main-server
           predicates:
             - Path=/admin/**
+        - id: request-user-requests
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/requests,/users/*/requests/**
+        - id: request-event-owner-requests
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/events/*/requests,/users/*/events/*/requests/**
+        - id: event-private-user-events
+          uri: lb://event-service
+          predicates:
+            - Path=/users/*/events,/users/*/events/**
         - id: main-users
           uri: lb://main-server
           predicates:
             - Path=/users/**
-        - id: main-events
-          uri: lb://main-server
+        - id: event-public
+          uri: lb://event-service
           predicates:
-            - Path=/events/**
-        - id: main-categories
-          uri: lb://main-server
+            - Path=/events,/events/**
+        - id: additional-categories
+          uri: lb://additional-service
           predicates:
-            - Path=/categories/**
-        - id: main-compilations
-          uri: lb://main-server
+            - Path=/categories,/categories/**
+        - id: event-compilations
+          uri: lb://event-service
           predicates:
-            - Path=/compilations/**
-        - id: main-locations
-          uri: lb://main-server
+            - Path=/compilations,/compilations/**
+        - id: additional-locations
+          uri: lb://additional-service
           predicates:
-            - Path=/locations/**
+            - Path=/locations,/locations/**
 
 server:
   port: 8080
